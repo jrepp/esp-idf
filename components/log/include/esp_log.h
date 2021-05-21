@@ -295,7 +295,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 /** @endcond */
 
-/// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
+/// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``
 #define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
 /**

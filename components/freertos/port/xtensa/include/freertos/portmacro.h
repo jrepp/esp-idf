@@ -416,6 +416,25 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
  */
 static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
 
+void _frxt_setup_switch( void );
+
+/**
+ * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with,
+ * or without arguments. The macro counts only 0 or 1 arguments.
+ *
+ * In the future, we want to switch to C++20. We also want to become compatible with clang.
+ * Hence, we provide two versions of the following macros which are using variadic arguments.
+ * The first one is using the GNU extension ##__VA_ARGS__. The second one is using the C++20 feature __VA_OPT__(,).
+ * This allows users to compile their code with standard C++20 enabled instead of the GNU extension.
+ * Below C++20, we haven't found any good alternative to using ##__VA_ARGS__.
+ */
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0 __VA_OPT__(,) __VA_ARGS__,1,0)
+#else
+#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
+#endif
+#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
+
 
 
 /* ------------------------------------------- FreeRTOS Porting Interface ----------------------------------------------
