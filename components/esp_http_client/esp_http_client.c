@@ -70,6 +70,7 @@ typedef struct {
     char                         *cert_pem;
     esp_http_client_method_t     method;
     esp_http_client_auth_type_t  auth_type;
+    esp_http_authorize_cb        auth_callback;
     esp_http_client_transport_t  transport_type;
     int                          max_store_header_size;
 } connection_info_t;
@@ -187,12 +188,13 @@ static int http_on_message_begin(http_parser *parser)
 
 static int http_on_url(http_parser *parser, const char *at, size_t length)
 {
-    ESP_LOGD(TAG, "http_on_url");
+    ESP_LOGD(TAG, "http_on_url %.*s", (int)length, at);
     return 0;
 }
 
 static int http_on_status(http_parser *parser, const char *at, size_t length)
 {
+    ESP_LOGD(TAG, "http_on_status %.*s", (int)length, at);
     return 0;
 }
 
@@ -353,11 +355,25 @@ esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_auth_callback(esp_http_client_handle_t client, esp_http_authorize_cb auth_callback)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (auth_callback == NULL) {
+        ESP_LOGE(TAG, "callback must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    client->connection_info.auth_type = HTTP_AUTH_TYPE_CALLBACK;
+    client->connection_info.auth_callback = auth_callback;
+    return ESP_OK;
+}
+
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
-    client->connection_info.auth_type = config->auth_type;
     client->event_handler = config->event_handler;
     client->timeout_ms = config->timeout_ms;
     client->max_redirection_count = config->max_redirection_count;
@@ -365,6 +381,12 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->buffer_size_rx = config->buffer_size;
     client->buffer_size_tx = config->buffer_size_tx;
     client->disable_auto_redirect = config->disable_auto_redirect;
+
+    if (config->auth_type == HTTP_AUTH_TYPE_CALLBACK) {
+        esp_http_client_set_auth_callback(client, config->auth_callback);
+    } else {
+        esp_http_client_set_authtype(client, config->auth_type);
+    }
 
     if (config->buffer_size == 0) {
         client->buffer_size_rx = DEFAULT_HTTP_BUF_SIZE;
@@ -497,6 +519,15 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
             free(auth_response);
         }
     }
+
+    if (client->connection_info.auth_type == HTTP_AUTH_TYPE_CALLBACK && client->connection_info.auth_callback) {
+        esp_err_t err = client->connection_info.auth_callback(client);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "auth_callback failed %d", err);
+            return err;
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -687,6 +718,14 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
     return esp_http_client_set_url(client, client->location);
 }
 
+const char * esp_http_client_get_redirection(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return NULL;
+    }
+    return client->location;
+}
+
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 {
     if (client->response->status_code >= HttpStatus_Ok && client->response->status_code < HttpStatus_MultipleChoices) {
@@ -699,6 +738,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_SeeOther:
         case HttpStatus_TemporaryRedirect:
             esp_http_client_set_redirection(client);
             client->redirect_counter ++;
@@ -1354,6 +1394,8 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
         client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
         client->process_again = 1;
+    } else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_CALLBACK) {
+        client->connection_info.auth_callback(client);
     } else {
         client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
         ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
