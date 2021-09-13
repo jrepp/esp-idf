@@ -31,7 +31,9 @@ typedef struct {
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
-#define ESP_ERR_HTTPS_OTA_IN_PROGRESS     (ESP_ERR_HTTPS_OTA_BASE + 1)  /* OTA operation in progress */
+#define ESP_ERR_HTTPS_OTA_IN_PROGRESS     (ESP_ERR_HTTPS_OTA_BASE + 0x01)  /* OTA operation in progress */
+#define ESP_ERR_HTTPS_OTA_SAME_VERSION    (ESP_ERR_HTTPS_OTA_BASE + 0x02)  /*!< Error if the endpoint reports 204 (NoContent) and the client can skip the flash download */
+#define ESP_ERR_HTTPS_OTA_NOT_FOUND       (ESP_ERR_HTTPS_OTA_BASE + 0x03)  /*!< Error if the endpoint reports that the file is not found */
 
 /**
  * @brief    HTTPS OTA Firmware upgrade.
