@@ -93,7 +93,10 @@ typedef enum {
     HTTP_AUTH_TYPE_NONE = 0,    /*!< No authention */
     HTTP_AUTH_TYPE_BASIC,       /*!< HTTP Basic authentication */
     HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Disgest authentication */
+    HTTP_AUTH_TYPE_CALLBACK,    /*!< HTTP Callback authentication (bearer,jwt,etc) */
 } esp_http_client_auth_type_t;
+
+typedef esp_err_t (*esp_http_authorize_cb)(esp_http_client_handle_t client);
 
 /**
  * @brief HTTP configuration
@@ -105,6 +108,7 @@ typedef struct {
     const char                  *username;           /*!< Using for Http authentication */
     const char                  *password;           /*!< Using for Http authentication */
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
+    esp_http_authorize_cb       auth_callback;       /*!< Callback to generate client authorization header */
     const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
     const char                  *query;              /*!< HTTP query */
     const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
@@ -144,6 +148,7 @@ typedef struct {
 typedef enum {
     /* 2xx - Success */
     HttpStatus_Ok                = 200,
+    HttpStatus_NoContent         = 204,
 
     /* 3xx - Redirection */
     HttpStatus_MultipleChoices   = 300,
@@ -358,6 +363,18 @@ esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http
 int esp_http_client_get_errno(esp_http_client_handle_t client);
 
 /**
+ * @brief      Set http request auth_type.
+ *
+ * @param[in]  client           The esp_http_client handle
+ * @param[in]  auth_callback    The callback that generates the authorization header(s)
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_set_auth_callback(esp_http_client_handle_t client, esp_http_authorize_cb auth_callback);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle
@@ -524,6 +541,19 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  *     - ESP_FAIL
  */
 esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
+
+/**
+ * @brief      Get redirection URL.
+ *             When received the 30x code from the server, the client stores the redirect URL provided by the server.
+ *             This function returns the current redirect location.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - NULL
+ *     - location
+ */
+const char * esp_http_client_get_redirection(esp_http_client_handle_t client);
 
 /**
  * @brief      On receiving HTTP Status code 401, this API can be invoked to add authorization
