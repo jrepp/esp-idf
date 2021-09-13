@@ -50,6 +50,7 @@ static bool process_again(int status_code)
     switch (status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_SeeOther:
         case HttpStatus_TemporaryRedirect:
         case HttpStatus_Unauthorized:
             return true;
@@ -62,7 +63,7 @@ static bool process_again(int status_code)
 static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client, int status_code)
 {
     esp_err_t err;
-    if (status_code == HttpStatus_MovedPermanently || status_code == HttpStatus_Found || status_code == HttpStatus_TemporaryRedirect) {
+    if (status_code == HttpStatus_MovedPermanently || status_code == HttpStatus_Found || status_code == HttpStatus_TemporaryRedirect || status_code == HttpStatus_SeeOther) {
         err = esp_http_client_set_redirection(http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "URL redirection Failed");
@@ -70,8 +71,8 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
         }
     } else if (status_code == HttpStatus_Unauthorized) {
         esp_http_client_add_auth(http_client);
-    } else if(status_code == HttpStatus_NotFound || status_code == HttpStatus_Forbidden) {
-        ESP_LOGE(TAG, "File not found(%d)", status_code);
+    } else if(status_code == HttpStatus_Forbidden) {
+        ESP_LOGE(TAG, "Forbidden access (%d)", status_code);
         return ESP_FAIL;
     } else if (status_code >= HttpStatus_BadRequest && status_code < HttpStatus_InternalError) {
         ESP_LOGE(TAG, "Client error (%d)", status_code);
@@ -79,6 +80,11 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
     } else if (status_code >= HttpStatus_InternalError) {
         ESP_LOGE(TAG, "Server error (%d)", status_code);
         return ESP_FAIL;
+    } else if (status_code == HttpStatus_NoContent) {
+        return ESP_ERR_HTTPS_OTA_SAME_VERSION;
+    } else if (status_code == HttpStatus_NotFound) {
+        ESP_LOGE(TAG, "Not found (%d)", status_code);
+        return ESP_ERR_HTTPS_OTA_NOT_FOUND;
     }
 
     char upgrade_data_buf[DEFAULT_OTA_BUF_SIZE];
@@ -156,7 +162,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     }
 
 #if !CONFIG_OTA_ALLOW_HTTP
-    if (!ota_config->http_config->cert_pem) {
+    if (!ota_config->http_config->cert_pem && !ota_config->http_config->use_global_ca_store) {
         ESP_LOGE(TAG, "Server certificate not found in esp_http_client config");
         *handle = NULL;
         return ESP_ERR_INVALID_ARG;
@@ -187,7 +193,13 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     }
 
     err = _http_connect(https_ota_handle->http_client);
-    if (err != ESP_OK) {
+    if (err == ESP_ERR_HTTPS_OTA_SAME_VERSION) {
+        ESP_LOGI(TAG, "Skipping OTA update, endpoint has same version");
+        goto http_cleanup;
+    } else if (err == ESP_ERR_HTTPS_OTA_NOT_FOUND) {
+        ESP_LOGI(TAG, "Failed OTA update, endpoint missing firmware");
+        goto http_cleanup;
+    } else if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to establish HTTP connection");
         goto http_cleanup;
     }
