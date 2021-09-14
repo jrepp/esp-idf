@@ -319,15 +319,12 @@ void _frxt_setup_switch( void );
  * This allows users to compile their code with standard C++20 enabled instead of the GNU extension.
  * Below C++20, we haven't found any good alternative to using ##__VA_ARGS__.
  */
-<<<<<<< HEAD
-#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
-=======
-#if defined(__cplusplus) && (__cplusplus >  201703L)
+#if defined(__cplusplus)
 #define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0 __VA_OPT__(,) __VA_ARGS__,1,0)
 #else
 #define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
 #endif
->>>>>>> f6031d469b ([cxx]: No ##__VA_ARGS__ in public header files)
+
 #define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
 _Static_assert(portGET_ARGUMENT_COUNT() == 0, "portGET_ARGUMENT_COUNT() result does not match for 0 arguments");
@@ -340,7 +337,7 @@ _Static_assert(portGET_ARGUMENT_COUNT(1) == 1, "portGET_ARGUMENT_COUNT() result 
  *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
  *          might result in undesired behaviour
  */
-#if defined(__cplusplus) && (__cplusplus >  201703L)
+#if defined(__cplusplus)
 #define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__) __VA_OPT__(,) __VA_ARGS__)
 #else
 #define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__), ##__VA_ARGS__)

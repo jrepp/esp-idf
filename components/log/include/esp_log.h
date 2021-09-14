@@ -279,9 +279,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 /** @endcond */
 
-<<<<<<< HEAD
-/// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``
-=======
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
 #define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
@@ -303,7 +300,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /// macro to output logs in startup code at ``ESP_LOG_VERBOSE`` level.  @see ``ESP_EARLY_LOGE``,``ESP_LOGE``, ``printf``
 #define ESP_EARLY_LOGV( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_VERBOSE, V __VA_OPT__(,) __VA_ARGS__)
 #else // !(defined(__cplusplus) && (__cplusplus >  201703L))
->>>>>>> f6031d469b ([cxx]: No ##__VA_ARGS__ in public header files)
+
 #define ESP_EARLY_LOGE( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_ERROR,   E, ##__VA_ARGS__)
 /// macro to output logs in startup code at ``ESP_LOG_WARN`` level.  @see ``ESP_EARLY_LOGE``,``ESP_LOGE``, ``printf``
 #define ESP_EARLY_LOGW( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_WARN,    W, ##__VA_ARGS__)
