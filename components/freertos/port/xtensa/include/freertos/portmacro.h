@@ -433,7 +433,6 @@ void _frxt_setup_switch( void );
 #else
 #define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
 #endif
-
 #define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
 
@@ -516,7 +515,7 @@ void _frxt_setup_switch( void );
  *
  * @note [refactor-todo] Refactor this to avoid va_args
  */
-#if defined(__cplusplus)
+#if defined(__cplusplus) && (__cplusplus >  201703L)
 #define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__) __VA_OPT__(,) __VA_ARGS__)
 #else
 #define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__), ##__VA_ARGS__)
