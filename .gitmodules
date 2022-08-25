@@ -110,3 +110,5 @@
 [submodule "components/ieee802154/lib"]
 	path = components/ieee802154/lib
 	url = ../../espressif/esp-ieee802154-lib.git
+[submodule "esp-mqtt"]
+	url = git@github.com:jrepp/esp-mqtt.git
