@@ -124,6 +124,12 @@ menu "ESP-MQTT Configurations"
         help
             This will enable core selection
 
+    config MQTT_TASK_ENABLE_WDT
+        bool "Enable a watchdog timer on the MQTT task"
+        default false
+        help
+            This will enable the watchdog timer, it must be initialized before starting MQTT
+
     choice MQTT_TASK_CORE_SELECTION
         depends on MQTT_TASK_CORE_SELECTION_ENABLED
         prompt "Core to use ?"
