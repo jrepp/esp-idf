@@ -53,7 +53,7 @@
 
 [submodule "components/mqtt/esp-mqtt"]
 	path = components/mqtt/esp-mqtt
-	url = ../../espressif/esp-mqtt.git
+	url = git@github.com:jrepp/esp-mqtt.git
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
@@ -110,5 +110,3 @@
 [submodule "components/ieee802154/lib"]
 	path = components/ieee802154/lib
 	url = ../../espressif/esp-ieee802154-lib.git
-[submodule "esp-mqtt"]
-	url = git@github.com:jrepp/esp-mqtt.git
